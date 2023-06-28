@@ -1,9 +1,6 @@
 package openai_test
 
 import (
-	. "github.com/sashabaranov/go-openai"
-	"github.com/sashabaranov/go-openai/internal/test/checks"
-
 	"context"
 	"encoding/json"
 	"errors"
@@ -14,6 +11,10 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	. "github.com/sashabaranov/go-openai"
+	"github.com/sashabaranov/go-openai/internal/test"
+	"github.com/sashabaranov/go-openai/internal/test/checks"
 )
 
 func TestCompletionsWrongModel(t *testing.T) {
@@ -57,6 +58,30 @@ func TestCompletions(t *testing.T) {
 	}
 	_, err := client.CreateCompletion(context.Background(), req)
 	checks.NoError(t, err, "CreateCompletion error")
+}
+
+func TestCompletionsRateLimit(t *testing.T) {
+	server := test.NewTestServer()
+	server.RegisterHandler("/v1/completions", handleCompletionEndpoint)
+	// create the test server
+	var err error
+	ts := server.OpenAITestServer()
+	ts.Start()
+	defer ts.Close()
+
+	config := DefaultConfig(test.GetTestToken())
+	config.EnableRateLimiter = true
+	config.BaseURL = ts.URL + "/v1"
+	client := NewClientWithConfig(config)
+	ctx, cancel := context.WithCancel(context.Background())
+	req := CompletionRequest{
+		MaxTokens: 5,
+		Model:     "ada",
+	}
+	req.Prompt = "Lorem ipsum"
+	cancel()
+	_, err = client.CreateCompletion(ctx, req)
+	checks.ErrorContains(t, err, "context canceled", "CreateCompletion error")
 }
 
 // handleCompletionEndpoint Handles the completion endpoint by the test server.
@@ -122,4 +147,54 @@ func getCompletionBody(r *http.Request) (CompletionRequest, error) {
 		return CompletionRequest{}, err
 	}
 	return completion, nil
+}
+
+func TestCompletionRequest_Tokens(t *testing.T) {
+	testcases := []struct {
+		name       string
+		model      string
+		prompt     any
+		wantErr    error
+		wantTokens int
+	}{
+		{
+			name:    "test unknown model",
+			model:   "unknown",
+			prompt:  "Hello, world!",
+			wantErr: errors.New("failed to tokenize prompt: model not supported: model not supported"),
+		},
+		{
+			name:       "test1",
+			model:      GPT3Dot5Turbo,
+			prompt:     "Hello, world!",
+			wantTokens: 4,
+		},
+		{
+			name:       "test any prompt",
+			model:      GPT3Dot5Turbo,
+			prompt:     1,
+			wantTokens: 0,
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.name, func(tt *testing.T) {
+			req := CompletionRequest{
+				Model:  testcase.model,
+				Prompt: testcase.prompt,
+			}
+			tokens, err := req.Tokens()
+			if err != nil && testcase.wantErr == nil {
+				tt.Fatalf("Tokens() returned unexpected error: %v", err)
+			}
+
+			if err != nil && testcase.wantErr != nil && err.Error() != testcase.wantErr.Error() {
+				tt.Fatalf("Tokens() returned unexpected error: %v, want: %v", err, testcase.wantErr)
+			}
+
+			if tokens != testcase.wantTokens {
+				tt.Fatalf("Tokens() returned unexpected number of tokens: %d, want: %d", tokens, testcase.wantTokens)
+			}
+		})
+	}
 }

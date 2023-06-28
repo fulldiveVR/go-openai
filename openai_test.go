@@ -12,6 +12,7 @@ func setupOpenAITestServer() (client *Client, server *test.ServerTest, teardown 
 	teardown = ts.Close
 	config := DefaultConfig(test.GetTestToken())
 	config.BaseURL = ts.URL + "/v1"
+	config.EnableRateLimiter = true
 	client = NewClientWithConfig(config)
 	return
 }

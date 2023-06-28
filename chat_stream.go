@@ -45,6 +45,13 @@ func (c *Client) CreateChatCompletionStream(
 		return
 	}
 
+	if c.config.EnableRateLimiter {
+		err = c.rateLimiter.WaitForRequest(ctx, request.Model, request)
+		if err != nil {
+			return
+		}
+	}
+
 	request.Stream = true
 	req, err := c.newRequest(ctx, http.MethodPost, c.fullURL(urlSuffix, request.Model), withBody(request))
 	if err != nil {
