@@ -1,12 +1,11 @@
 package openai_test
 
 import (
-	. "github.com/sashabaranov/go-openai"
-	"github.com/sashabaranov/go-openai/internal/test/checks"
-
 	"context"
 	"encoding/json"
 	"errors"
+	. "github.com/sashabaranov/go-openai"
+	"github.com/sashabaranov/go-openai/internal/test/checks"
 	"io"
 	"net/http"
 	"testing"
@@ -126,6 +125,48 @@ func TestCreateChatCompletionStream(t *testing.T) {
 	if !errors.Is(streamErr, io.EOF) {
 		t.Errorf("stream.Recv() did not return EOF when the stream is finished: %v", streamErr)
 	}
+}
+
+func TestCreateChatCompletionStreamRateLimit(t *testing.T) {
+	client, server, teardown := setupOpenAITestServer()
+	defer teardown()
+	server.RegisterHandler("/v1/chat/completions", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+
+		// Send test responses
+		dataBytes := []byte{}
+		dataBytes = append(dataBytes, []byte("event: message\n")...)
+		//nolint:lll
+		data := `{"id":"1","object":"completion","created":1598069254,"model":"gpt-3.5-turbo","choices":[{"index":0,"delta":{"content":"response1"},"finish_reason":"max_tokens"}]}`
+		dataBytes = append(dataBytes, []byte("data: "+data+"\n\n")...)
+
+		dataBytes = append(dataBytes, []byte("event: message\n")...)
+		//nolint:lll
+		data = `{"id":"2","object":"completion","created":1598069255,"model":"gpt-3.5-turbo","choices":[{"index":0,"delta":{"content":"response2"},"finish_reason":"max_tokens"}]}`
+		dataBytes = append(dataBytes, []byte("data: "+data+"\n\n")...)
+
+		dataBytes = append(dataBytes, []byte("event: done\n")...)
+		dataBytes = append(dataBytes, []byte("data: [DONE]\n\n")...)
+
+		_, err := w.Write(dataBytes)
+		checks.NoError(t, err, "Write error")
+	})
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	cancel()
+	_, err := client.CreateChatCompletionStream(ctx, ChatCompletionRequest{
+		MaxTokens: 5,
+		Model:     GPT3Dot5Turbo,
+		Messages: []ChatCompletionMessage{
+			{
+				Role:    ChatMessageRoleUser,
+				Content: "Hello!",
+			},
+		},
+		Stream: true,
+	})
+	checks.ErrorContains(t, err, "failed to wait for rate limiter: context canceled")
 }
 
 func TestCreateChatCompletionStreamError(t *testing.T) {

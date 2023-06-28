@@ -16,6 +16,7 @@ import (
 type Client struct {
 	config ClientConfig
 
+	rateLimiter       RateLimiter
 	requestBuilder    utils.RequestBuilder
 	createFormBuilder func(io.Writer) utils.FormBuilder
 }
@@ -28,13 +29,19 @@ func NewClient(authToken string) *Client {
 
 // NewClientWithConfig creates new OpenAI API client for specified config.
 func NewClientWithConfig(config ClientConfig) *Client {
-	return &Client{
+	c := &Client{
 		config:         config,
 		requestBuilder: utils.NewRequestBuilder(),
 		createFormBuilder: func(body io.Writer) utils.FormBuilder {
 			return utils.NewFormBuilder(body)
 		},
 	}
+
+	if c.config.EnableRateLimiter {
+		c.rateLimiter = NewMemRateLimiter(c.config.APIType)
+	}
+
+	return c
 }
 
 // NewOrgClient creates new OpenAI API client for specified Organization ID.
