@@ -8,3 +8,5 @@ require (
 )
 
 require github.com/dlclark/regexp2 v1.9.0 // indirect
+
+replace github.com/tiktoken-go/tokenizer v0.1.0 => github.com/fulldiveVR/tokenizer v0.0.0-20230628082957-c6fd2ab6ff19
