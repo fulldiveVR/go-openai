@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/sashabaranov/go-openai/internal/test"
 	"io"
 	"net/http"
 	"strconv"
@@ -13,8 +12,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sashabaranov/go-openai/internal/test"
+
 	. "github.com/sashabaranov/go-openai"
 	"github.com/sashabaranov/go-openai/internal/test/checks"
+	"github.com/sashabaranov/go-openai/jsonschema"
 )
 
 func TestChatCompletionsWrongModel(t *testing.T) {
@@ -70,32 +72,126 @@ func TestChatCompletions(t *testing.T) {
 }
 
 func TestChatCompletionsRateLimit(t *testing.T) {
-	server := test.NewTestServer()
+	client, server, teardown := setupOpenAITestServer()
+	defer teardown()
 	server.RegisterHandler("/v1/chat/completions", handleChatCompletionEndpoint)
-	// create the test server
-	var err error
-	ts := server.OpenAITestServer()
-	ts.Start()
-	defer ts.Close()
-
-	config := DefaultConfig(test.GetTestToken())
-	config.EnableRateLimiter = true
-	config.BaseURL = ts.URL + "/v1"
-	client := NewClientWithConfig(config)
-	ctx := context.Background()
-
-	req := ChatCompletionRequest{
-		MaxTokens: 5,
-		Model:     GPT3Dot5Turbo,
-		Messages: []ChatCompletionMessage{
-			{
-				Role:    ChatMessageRoleUser,
-				Content: "Hello!",
+	t.Run("bytes", func(t *testing.T) {
+		//nolint:lll
+		msg := json.RawMessage(`{"properties":{"count":{"type":"integer","description":"total number of words in sentence"},"words":{"items":{"type":"string"},"type":"array","description":"list of words in sentence"}},"type":"object","required":["count","words"]}`)
+		_, err := client.CreateChatCompletion(context.Background(), ChatCompletionRequest{
+			MaxTokens: 5,
+			Model:     GPT3Dot5Turbo0613,
+			Messages: []ChatCompletionMessage{
+				{
+					Role:    ChatMessageRoleUser,
+					Content: "Hello!",
+				},
 			},
-		},
-	}
-	_, err = client.CreateChatCompletion(ctx, req)
-	checks.NoError(t, err, "CreateChatCompletion error")
+			Functions: []FunctionDefinition{{
+				Name:       "test",
+				Parameters: &msg,
+			}},
+		})
+		checks.NoError(t, err, "CreateChatCompletion with functions error")
+	})
+	t.Run("struct", func(t *testing.T) {
+		type testMessage struct {
+			Count int      `json:"count"`
+			Words []string `json:"words"`
+		}
+		msg := testMessage{
+			Count: 2,
+			Words: []string{"hello", "world"},
+		}
+		_, err := client.CreateChatCompletion(context.Background(), ChatCompletionRequest{
+			MaxTokens: 5,
+			Model:     GPT3Dot5Turbo0613,
+			Messages: []ChatCompletionMessage{
+				{
+					Role:    ChatMessageRoleUser,
+					Content: "Hello!",
+				},
+			},
+			Functions: []FunctionDefinition{{
+				Name:       "test",
+				Parameters: &msg,
+			}},
+		})
+		checks.NoError(t, err, "CreateChatCompletion with functions error")
+	})
+	t.Run("JSONSchemaDefinition", func(t *testing.T) {
+		_, err := client.CreateChatCompletion(context.Background(), ChatCompletionRequest{
+			MaxTokens: 5,
+			Model:     GPT3Dot5Turbo0613,
+			Messages: []ChatCompletionMessage{
+				{
+					Role:    ChatMessageRoleUser,
+					Content: "Hello!",
+				},
+			},
+			Functions: []FunctionDefinition{{
+				Name: "test",
+				Parameters: &jsonschema.Definition{
+					Type: jsonschema.Object,
+					Properties: map[string]jsonschema.Definition{
+						"count": {
+							Type:        jsonschema.Number,
+							Description: "total number of words in sentence",
+						},
+						"words": {
+							Type:        jsonschema.Array,
+							Description: "list of words in sentence",
+							Items: &jsonschema.Definition{
+								Type: jsonschema.String,
+							},
+						},
+						"enumTest": {
+							Type: jsonschema.String,
+							Enum: []string{"hello", "world"},
+						},
+					},
+				},
+			}},
+		})
+		checks.NoError(t, err, "CreateChatCompletion with functions error")
+	})
+	t.Run("JSONSchemaDefinitionWithFunctionDefine", func(t *testing.T) {
+		// this is a compatibility check
+		_, err := client.CreateChatCompletion(context.Background(), ChatCompletionRequest{
+			MaxTokens: 5,
+			Model:     GPT3Dot5Turbo0613,
+			Messages: []ChatCompletionMessage{
+				{
+					Role:    ChatMessageRoleUser,
+					Content: "Hello!",
+				},
+			},
+			Functions: []FunctionDefine{{
+				Name: "test",
+				Parameters: &jsonschema.Definition{
+					Type: jsonschema.Object,
+					Properties: map[string]jsonschema.Definition{
+						"count": {
+							Type:        jsonschema.Number,
+							Description: "total number of words in sentence",
+						},
+						"words": {
+							Type:        jsonschema.Array,
+							Description: "list of words in sentence",
+							Items: &jsonschema.Definition{
+								Type: jsonschema.String,
+							},
+						},
+						"enumTest": {
+							Type: jsonschema.String,
+							Enum: []string{"hello", "world"},
+						},
+					},
+				},
+			}},
+		})
+		checks.NoError(t, err, "CreateChatCompletion with functions error")
+	})
 }
 
 func TestChatCompletionsRateLimitErr(t *testing.T) {
@@ -256,5 +352,36 @@ func TestChatCompletionRequest_Tokens(t *testing.T) {
 				tt.Fatalf("Tokens() returned unexpected number of tokens: %d, want: %d", tokens, testcase.wantTokens)
 			}
 		})
+	}
+}
+
+func TestFinishReason(t *testing.T) {
+	c := &ChatCompletionChoice{
+		FinishReason: FinishReasonNull,
+	}
+	resBytes, _ := json.Marshal(c)
+	if !strings.Contains(string(resBytes), `"finish_reason":null`) {
+		t.Error("null should not be quoted")
+	}
+
+	c.FinishReason = ""
+
+	resBytes, _ = json.Marshal(c)
+	if !strings.Contains(string(resBytes), `"finish_reason":null`) {
+		t.Error("null should not be quoted")
+	}
+
+	otherReasons := []FinishReason{
+		FinishReasonStop,
+		FinishReasonLength,
+		FinishReasonFunctionCall,
+		FinishReasonContentFilter,
+	}
+	for _, r := range otherReasons {
+		c.FinishReason = r
+		resBytes, _ = json.Marshal(c)
+		if !strings.Contains(string(resBytes), fmt.Sprintf(`"finish_reason":"%s"`, r)) {
+			t.Errorf("%s should be quoted", r)
+		}
 	}
 }

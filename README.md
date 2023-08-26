@@ -10,11 +10,15 @@ This library provides unofficial Go clients for [OpenAI API](https://platform.op
 * DALL·E 2
 * Whisper
 
-### Installation:
+## Installation
+
 ```
 go get github.com/sashabaranov/go-openai
 ```
 Currently, go-openai requires Go version 1.18 or greater.
+
+
+## Usage
 
 ### ChatGPT example usage:
 
@@ -51,6 +55,17 @@ func main() {
 }
 
 ```
+
+### Getting an OpenAI API Key:
+
+1. Visit the OpenAI website at [https://platform.openai.com/account/api-keys](https://platform.openai.com/account/api-keys).
+2. If you don't have an account, click on "Sign Up" to create one. If you do, click "Log In".
+3. Once logged in, navigate to your API key management page.
+4. Click on "Create new secret key".
+5. Enter a name for your new key, then click "Create secret key".
+6. Your new API key will be displayed. Use this key to interact with the OpenAI API.
+
+**Note:** Your API key is sensitive information. Do not share it with anyone.
 
 ### Other examples:
 
@@ -651,21 +666,109 @@ func main() {
 ```
 </details>
 
+<details>
+<summary>Fine Tune Model</summary>
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"github.com/sashabaranov/go-openai"
+)
+
+func main() {
+	client := openai.NewClient("your token")
+	ctx := context.Background()
+
+	// create a .jsonl file with your training data
+	// {"prompt": "<prompt text>", "completion": "<ideal generated text>"}
+	// {"prompt": "<prompt text>", "completion": "<ideal generated text>"}
+	// {"prompt": "<prompt text>", "completion": "<ideal generated text>"}
+
+	// you can use openai cli tool to validate the data
+	// For more info - https://platform.openai.com/docs/guides/fine-tuning
+
+	file, err := client.CreateFile(ctx, openai.FileRequest{
+		FilePath: "training_prepared.jsonl",
+		Purpose:  "fine-tune",
+	})
+	if err != nil {
+		fmt.Printf("Upload JSONL file error: %v\n", err)
+		return
+	}
+
+	// create a fine tune job
+	// Streams events until the job is done (this often takes minutes, but can take hours if there are many jobs in the queue or your dataset is large)
+	// use below get method to know the status of your model
+	tune, err := client.CreateFineTune(ctx, openai.FineTuneRequest{
+		TrainingFile: file.ID,
+		Model:        "ada", // babbage, curie, davinci, or a fine-tuned model created after 2022-04-21.
+	})
+	if err != nil {
+		fmt.Printf("Creating new fine tune model error: %v\n", err)
+		return
+	}
+
+	getTune, err := client.GetFineTune(ctx, tune.ID)
+	if err != nil {
+		fmt.Printf("Getting fine tune model error: %v\n", err)
+		return
+	}
+	fmt.Println(getTune.FineTunedModel)
+
+	// once the status of getTune is `succeeded`, you can use your fine tune model in Completion Request
+
+	// resp, err := client.CreateCompletion(ctx, openai.CompletionRequest{
+	//	 Model:  getTune.FineTunedModel,
+	//	 Prompt: "your prompt",
+	// })
+	// if err != nil {
+	//	 fmt.Printf("Create completion error %v\n", err)
+	//	 return
+	// }
+	//
+	// fmt.Println(resp.Choices[0].Text)
+}
+```
+</details>
 See the `examples/` folder for more.
 
-### Integration tests:
+## Frequently Asked Questions
 
-Integration tests are requested against the production version of the OpenAI API. These tests will verify that the library is properly coded against the actual behavior of the API, and will  fail upon any incompatible change in the API.
+### Why don't we get the same answer when specifying a temperature field of 0 and asking the same question?
 
-**Notes:**
-These tests send real network traffic to the OpenAI API and may reach rate limits. Temporary network problems may also cause the test to fail.
+Even when specifying a temperature field of 0, it doesn't guarantee that you'll always get the same response. Several factors come into play.
 
-**Run tests using:**
-```
-OPENAI_TOKEN=XXX go test -v -tags=integration ./api_integration_test.go
-```
+1. Go OpenAI Behavior: When you specify a temperature field of 0 in Go OpenAI, the omitempty tag causes that field to be removed from the request. Consequently, the OpenAI API applies the default value of 1.
+2. Token Count for Input/Output: If there's a large number of tokens in the input and output, setting the temperature to 0 can still result in non-deterministic behavior. In particular, when using around 32k tokens, the likelihood of non-deterministic behavior becomes highest even with a temperature of 0.
 
-If the `OPENAI_TOKEN` environment variable is not available, integration tests will be skipped.
+Due to the factors mentioned above, different answers may be returned even for the same question.
+
+**Workarounds:**
+1. Using `math.SmallestNonzeroFloat32`: By specifying `math.SmallestNonzeroFloat32` in the temperature field instead of 0, you can mimic the behavior of setting it to 0.
+2. Limiting Token Count: By limiting the number of tokens in the input and output and especially avoiding large requests close to 32k tokens, you can reduce the risk of non-deterministic behavior.
+
+By adopting these strategies, you can expect more consistent results.
+
+**Related Issues:**  
+[omitempty option of request struct will generate incorrect request when parameter is 0.](https://github.com/sashabaranov/go-openai/issues/9)
+
+### Does Go OpenAI provide a method to count tokens?
+
+No, Go OpenAI does not offer a feature to count tokens, and there are no plans to provide such a feature in the future. However, if there's a way to implement a token counting feature with zero dependencies, it might be possible to merge that feature into Go OpenAI. Otherwise, it would be more appropriate to implement it in a dedicated library or repository.
+
+For counting tokens, you might find the following links helpful:  
+- [Counting Tokens For Chat API Calls](https://github.com/pkoukk/tiktoken-go#counting-tokens-for-chat-api-calls)
+- [How to count tokens with tiktoken](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb)
+
+**Related Issues:**  
+[Is it possible to join the implementation of GPT3 Tokenizer](https://github.com/sashabaranov/go-openai/issues/62)
+
+## Contributing
+
+By following [Contributing Guidelines](https://github.com/sashabaranov/go-openai/blob/master/CONTRIBUTING.md), we hope to ensure that your contributions are made smoothly and efficiently.
 
 ## Thank you
 
