@@ -30,14 +30,16 @@ const (
 	OpenAIGPT4RequestLimitPerMinute             = 200
 	OpenAIGPT432kRequestLimitPerMinute          = 20
 	OpenAIAudioRequestLimitPerMinute            = 50
+	OpenAIGPT3Dot5Turbo16kRequestLimitPerMinute = 2000
 	OpenAIDefaultRequestLimitPerMinute          = 3500
 
-	OpenAIDavinciTokensLimitPerMinute = 350000
-	OpenAIAdaTokensLimitPerMinute     = 350000 * 200
-	OpenAIChatTokensLimitPerMinute    = 90000
-	OpenAIGPT4TokensLimitPerMinute    = 40000
-	OpenAIGPT432kTokensLimitPerMinute = 150000
-	OpenAIDefaultTokensLimitPerMinute = 350000
+	OpenAIDavinciTokensLimitPerMinute          = 350000
+	OpenAIAdaTokensLimitPerMinute              = 350000 * 200
+	OpenAIChatTokensLimitPerMinute             = 90000
+	OpenAIGPT3Dot5Turbo16kTokensLimitPerMinute = 180_000
+	OpenAIGPT4TokensLimitPerMinute             = 40000
+	OpenAIGPT432kTokensLimitPerMinute          = 150000
+	OpenAIDefaultTokensLimitPerMinute          = 350000
 )
 
 type TokenCountable interface {
@@ -210,8 +212,8 @@ func (r *MemRateLimiter) newOpenAIRequestLimiters() map[string]*rate.Limiter {
 		GPT3Dot5Turbo:        r.newLimiter(OpenAIChatRequestLimitPerMinute),
 		GPT3Dot5Turbo0301:    r.newLimiter(OpenAIChatRequestLimitPerMinute),
 		GPT3Dot5Turbo0613:    r.newLimiter(OpenAIChatRequestLimitPerMinute),
-		GPT3Dot5Turbo16K:     r.newLimiter(OpenAIChatRequestLimitPerMinute),
-		GPT3Dot5Turbo16K0613: r.newLimiter(OpenAIChatRequestLimitPerMinute),
+		GPT3Dot5Turbo16K:     r.newLimiter(OpenAIGPT3Dot5Turbo16kRequestLimitPerMinute),
+		GPT3Dot5Turbo16K0613: r.newLimiter(OpenAIGPT3Dot5Turbo16kRequestLimitPerMinute),
 		GPT4:                 r.newLimiter(OpenAIGPT4RequestLimitPerMinute),
 		GPT40314:             r.newLimiter(OpenAIGPT4RequestLimitPerMinute),
 		GPT432K:              r.newLimiter(OpenAIGPT432kRequestLimitPerMinute),
@@ -228,8 +230,8 @@ func (r *MemRateLimiter) newOpenAITokensLimiters() map[string]*rate.Limiter {
 		GPT3Dot5Turbo:          r.newLimiter(OpenAIChatTokensLimitPerMinute),
 		GPT3Dot5Turbo0301:      r.newLimiter(OpenAIChatTokensLimitPerMinute),
 		GPT3Dot5Turbo0613:      r.newLimiter(OpenAIChatRequestLimitPerMinute),
-		GPT3Dot5Turbo16K:       r.newLimiter(OpenAIChatRequestLimitPerMinute),
-		GPT3Dot5Turbo16K0613:   r.newLimiter(OpenAIChatRequestLimitPerMinute),
+		GPT3Dot5Turbo16K:       r.newLimiter(OpenAIGPT3Dot5Turbo16kTokensLimitPerMinute),
+		GPT3Dot5Turbo16K0613:   r.newLimiter(OpenAIGPT3Dot5Turbo16kTokensLimitPerMinute),
 		GPT4:                   r.newLimiter(OpenAIGPT4TokensLimitPerMinute),
 		GPT432K:                r.newLimiter(OpenAIGPT432kTokensLimitPerMinute),
 	}
