@@ -37,7 +37,7 @@ const (
 	OpenAIAdaTokensLimitPerMinute              = 350000 * 200
 	OpenAIChatTokensLimitPerMinute             = 90000
 	OpenAIGPT3Dot5Turbo16kTokensLimitPerMinute = 180_000
-	OpenAIGPT4TokensLimitPerMinute             = 40000
+	OpenAIGPT4TokensLimitPerMinute             = 10000
 	OpenAIGPT432kTokensLimitPerMinute          = 150000
 	OpenAIDefaultTokensLimitPerMinute          = 350000
 )
