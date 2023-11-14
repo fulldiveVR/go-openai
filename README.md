@@ -484,6 +484,62 @@ func main() {
 </details>
 
 <details>
+<summary>Embedding Semantic Similarity</summary>
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+	openai "github.com/sashabaranov/go-openai"
+
+)
+
+func main() {
+	client := openai.NewClient("your-token")
+
+	// Create an EmbeddingRequest for the user query
+	queryReq := openai.EmbeddingRequest{
+		Input: []string{"How many chucks would a woodchuck chuck"},
+		Model: openai.AdaEmbeddingV2,
+	}
+
+	// Create an embedding for the user query
+	queryResponse, err := client.CreateEmbeddings(context.Background(), queryReq)
+	if err != nil {
+		log.Fatal("Error creating query embedding:", err)
+	}
+
+	// Create an EmbeddingRequest for the target text
+	targetReq := openai.EmbeddingRequest{
+		Input: []string{"How many chucks would a woodchuck chuck if the woodchuck could chuck wood"},
+		Model: openai.AdaEmbeddingV2,
+	}
+
+	// Create an embedding for the target text
+	targetResponse, err := client.CreateEmbeddings(context.Background(), targetReq)
+	if err != nil {
+		log.Fatal("Error creating target embedding:", err)
+	}
+
+	// Now that we have the embeddings for the user query and the target text, we
+	// can calculate their similarity.
+	queryEmbedding := queryResponse.Data[0]
+	targetEmbedding := targetResponse.Data[0]
+
+	similarity, err := queryEmbedding.DotProduct(&targetEmbedding)
+	if err != nil {
+		log.Fatal("Error calculating dot product:", err)
+	}
+
+	log.Printf("The similarity score between the query and the target is %f", similarity)
+}
+
+```
+</details>
+
+<details>
 <summary>Azure OpenAI Embeddings</summary>
 
 ```go
@@ -682,10 +738,15 @@ func main() {
 	client := openai.NewClient("your token")
 	ctx := context.Background()
 
-	// create a .jsonl file with your training data
+	// create a .jsonl file with your training data for conversational model
 	// {"prompt": "<prompt text>", "completion": "<ideal generated text>"}
 	// {"prompt": "<prompt text>", "completion": "<ideal generated text>"}
 	// {"prompt": "<prompt text>", "completion": "<ideal generated text>"}
+
+	// chat models are trained using the following file format:
+	// {"messages": [{"role": "system", "content": "Marv is a factual chatbot that is also sarcastic."}, {"role": "user", "content": "What's the capital of France?"}, {"role": "assistant", "content": "Paris, as if everyone doesn't know that already."}]}
+	// {"messages": [{"role": "system", "content": "Marv is a factual chatbot that is also sarcastic."}, {"role": "user", "content": "Who wrote 'Romeo and Juliet'?"}, {"role": "assistant", "content": "Oh, just some guy named William Shakespeare. Ever heard of him?"}]}
+	// {"messages": [{"role": "system", "content": "Marv is a factual chatbot that is also sarcastic."}, {"role": "user", "content": "How far is the Moon from Earth?"}, {"role": "assistant", "content": "Around 384,400 kilometers. Give or take a few, like that really matters."}]}
 
 	// you can use openai cli tool to validate the data
 	// For more info - https://platform.openai.com/docs/guides/fine-tuning
@@ -699,29 +760,29 @@ func main() {
 		return
 	}
 
-	// create a fine tune job
+	// create a fine tuning job
 	// Streams events until the job is done (this often takes minutes, but can take hours if there are many jobs in the queue or your dataset is large)
 	// use below get method to know the status of your model
-	tune, err := client.CreateFineTune(ctx, openai.FineTuneRequest{
+	fineTuningJob, err := client.CreateFineTuningJob(ctx, openai.FineTuningJobRequest{
 		TrainingFile: file.ID,
-		Model:        "ada", // babbage, curie, davinci, or a fine-tuned model created after 2022-04-21.
+		Model:        "davinci-002", // gpt-3.5-turbo-0613, babbage-002.
 	})
 	if err != nil {
 		fmt.Printf("Creating new fine tune model error: %v\n", err)
 		return
 	}
 
-	getTune, err := client.GetFineTune(ctx, tune.ID)
+	fineTuningJob, err = client.RetrieveFineTuningJob(ctx, fineTuningJob.ID)
 	if err != nil {
 		fmt.Printf("Getting fine tune model error: %v\n", err)
 		return
 	}
-	fmt.Println(getTune.FineTunedModel)
+	fmt.Println(fineTuningJob.FineTunedModel)
 
-	// once the status of getTune is `succeeded`, you can use your fine tune model in Completion Request
+	// once the status of fineTuningJob is `succeeded`, you can use your fine tune model in Completion Request or Chat Completion Request
 
 	// resp, err := client.CreateCompletion(ctx, openai.CompletionRequest{
-	//	 Model:  getTune.FineTunedModel,
+	//	 Model:  fineTuningJob.FineTunedModel,
 	//	 Prompt: "your prompt",
 	// })
 	// if err != nil {
@@ -747,8 +808,9 @@ Even when specifying a temperature field of 0, it doesn't guarantee that you'll 
 Due to the factors mentioned above, different answers may be returned even for the same question.
 
 **Workarounds:**
-1. Using `math.SmallestNonzeroFloat32`: By specifying `math.SmallestNonzeroFloat32` in the temperature field instead of 0, you can mimic the behavior of setting it to 0.
-2. Limiting Token Count: By limiting the number of tokens in the input and output and especially avoiding large requests close to 32k tokens, you can reduce the risk of non-deterministic behavior.
+1. As of November 2023, use [the new `seed` parameter](https://platform.openai.com/docs/guides/text-generation/reproducible-outputs) in conjunction with the `system_fingerprint` response field, alongside Temperature management.
+2. Try using `math.SmallestNonzeroFloat32`: By specifying `math.SmallestNonzeroFloat32` in the temperature field instead of 0, you can mimic the behavior of setting it to 0.
+3. Limiting Token Count: By limiting the number of tokens in the input and output and especially avoiding large requests close to 32k tokens, you can reduce the risk of non-deterministic behavior.
 
 By adopting these strategies, you can expect more consistent results.
 

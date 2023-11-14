@@ -21,6 +21,24 @@ type Client struct {
 	createFormBuilder func(io.Writer) utils.FormBuilder
 }
 
+type Response interface {
+	SetHeader(http.Header)
+}
+
+type httpHeader http.Header
+
+func (h *httpHeader) SetHeader(header http.Header) {
+	*h = httpHeader(header)
+}
+
+func (h *httpHeader) Header() http.Header {
+	return http.Header(*h)
+}
+
+func (h *httpHeader) GetRateLimitHeaders() RateLimitHeaders {
+	return newRateLimitHeaders(h.Header())
+}
+
 // NewClient creates new OpenAI API client.
 func NewClient(authToken string) *Client {
 	config := DefaultConfig(authToken)
@@ -72,6 +90,12 @@ func withContentType(contentType string) requestOption {
 	}
 }
 
+func withBetaAssistantV1() requestOption {
+	return func(args *requestOptions) {
+		args.header.Set("OpenAI-Beta", "assistants=v1")
+	}
+}
+
 func (c *Client) newRequest(ctx context.Context, method, url string, setters ...requestOption) (*http.Request, error) {
 	// Default Options
 	args := &requestOptions{
@@ -89,7 +113,7 @@ func (c *Client) newRequest(ctx context.Context, method, url string, setters ...
 	return req, nil
 }
 
-func (c *Client) sendRequest(req *http.Request, v any) error {
+func (c *Client) sendRequest(req *http.Request, v Response) error {
 	req.Header.Set("Accept", "application/json; charset=utf-8")
 
 	// Check whether Content-Type is already set, Upload Files API requires
@@ -108,6 +132,10 @@ func (c *Client) sendRequest(req *http.Request, v any) error {
 
 	if isFailureStatusCode(res) {
 		return c.handleErrorResp(res)
+	}
+
+	if v != nil {
+		v.SetHeader(res.Header)
 	}
 
 	return decodeResponse(res.Body, v)
@@ -145,6 +173,7 @@ func sendRequestStream[T streamable](client *Client, req *http.Request) (*stream
 		response:           resp,
 		errAccumulator:     utils.NewErrorAccumulator(),
 		unmarshaler:        &utils.JSONUnmarshaler{},
+		httpHeader:         httpHeader(resp.Header),
 	}, nil
 }
 

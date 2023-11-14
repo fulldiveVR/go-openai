@@ -223,6 +223,18 @@ func TestClientReturnsRequestBuilderErrors(t *testing.T) {
 		{"ListFineTuneEvents", func() (any, error) {
 			return client.ListFineTuneEvents(ctx, "")
 		}},
+		{"CreateFineTuningJob", func() (any, error) {
+			return client.CreateFineTuningJob(ctx, FineTuningJobRequest{})
+		}},
+		{"CancelFineTuningJob", func() (any, error) {
+			return client.CancelFineTuningJob(ctx, "")
+		}},
+		{"RetrieveFineTuningJob", func() (any, error) {
+			return client.RetrieveFineTuningJob(ctx, "")
+		}},
+		{"ListFineTuningJobEvents", func() (any, error) {
+			return client.ListFineTuningJobEvents(ctx, "")
+		}},
 		{"Moderations", func() (any, error) {
 			return client.Moderations(ctx, ModerationRequest{})
 		}},
@@ -258,6 +270,96 @@ func TestClientReturnsRequestBuilderErrors(t *testing.T) {
 		}},
 		{"GetModel", func() (any, error) {
 			return client.GetModel(ctx, "text-davinci-003")
+		}},
+		{"DeleteFineTuneModel", func() (any, error) {
+			return client.DeleteFineTuneModel(ctx, "")
+		}},
+		{"CreateAssistant", func() (any, error) {
+			return client.CreateAssistant(ctx, AssistantRequest{})
+		}},
+		{"RetrieveAssistant", func() (any, error) {
+			return client.RetrieveAssistant(ctx, "")
+		}},
+		{"ModifyAssistant", func() (any, error) {
+			return client.ModifyAssistant(ctx, "", AssistantRequest{})
+		}},
+		{"DeleteAssistant", func() (any, error) {
+			return client.DeleteAssistant(ctx, "")
+		}},
+		{"ListAssistants", func() (any, error) {
+			return client.ListAssistants(ctx, nil, nil, nil, nil)
+		}},
+		{"CreateAssistantFile", func() (any, error) {
+			return client.CreateAssistantFile(ctx, "", AssistantFileRequest{})
+		}},
+		{"ListAssistantFiles", func() (any, error) {
+			return client.ListAssistantFiles(ctx, "", nil, nil, nil, nil)
+		}},
+		{"RetrieveAssistantFile", func() (any, error) {
+			return client.RetrieveAssistantFile(ctx, "", "")
+		}},
+		{"DeleteAssistantFile", func() (any, error) {
+			return nil, client.DeleteAssistantFile(ctx, "", "")
+		}},
+		{"CreateMessage", func() (any, error) {
+			return client.CreateMessage(ctx, "", MessageRequest{})
+		}},
+		{"ListMessage", func() (any, error) {
+			return client.ListMessage(ctx, "", nil, nil, nil, nil)
+		}},
+		{"RetrieveMessage", func() (any, error) {
+			return client.RetrieveMessage(ctx, "", "")
+		}},
+		{"ModifyMessage", func() (any, error) {
+			return client.ModifyMessage(ctx, "", "", nil)
+		}},
+		{"RetrieveMessageFile", func() (any, error) {
+			return client.RetrieveMessageFile(ctx, "", "", "")
+		}},
+		{"ListMessageFiles", func() (any, error) {
+			return client.ListMessageFiles(ctx, "", "")
+		}},
+		{"CreateThread", func() (any, error) {
+			return client.CreateThread(ctx, ThreadRequest{})
+		}},
+		{"RetrieveThread", func() (any, error) {
+			return client.RetrieveThread(ctx, "")
+		}},
+		{"ModifyThread", func() (any, error) {
+			return client.ModifyThread(ctx, "", ModifyThreadRequest{})
+		}},
+		{"DeleteThread", func() (any, error) {
+			return client.DeleteThread(ctx, "")
+		}},
+		{"CreateRun", func() (any, error) {
+			return client.CreateRun(ctx, "", RunRequest{})
+		}},
+		{"RetrieveRun", func() (any, error) {
+			return client.RetrieveRun(ctx, "", "")
+		}},
+		{"ModifyRun", func() (any, error) {
+			return client.ModifyRun(ctx, "", "", RunModifyRequest{})
+		}},
+		{"ListRuns", func() (any, error) {
+			return client.ListRuns(ctx, "", Pagination{})
+		}},
+		{"SubmitToolOutputs", func() (any, error) {
+			return client.SubmitToolOutputs(ctx, "", "", SubmitToolOutputsRequest{})
+		}},
+		{"CancelRun", func() (any, error) {
+			return client.CancelRun(ctx, "", "")
+		}},
+		{"CreateThreadAndRun", func() (any, error) {
+			return client.CreateThreadAndRun(ctx, CreateThreadAndRunRequest{})
+		}},
+		{"RetrieveRunStep", func() (any, error) {
+			return client.RetrieveRunStep(ctx, "", "", "")
+		}},
+		{"ListRunSteps", func() (any, error) {
+			return client.ListRunSteps(ctx, "", "", Pagination{})
+		}},
+		{"CreateSpeech", func() (any, error) {
+			return client.CreateSpeech(ctx, CreateSpeechRequest{Model: TTSModel1, Voice: VoiceAlloy})
 		}},
 	}
 
