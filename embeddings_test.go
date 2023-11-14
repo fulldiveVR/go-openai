@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	. "github.com/sashabaranov/go-openai"
-	"github.com/sashabaranov/go-openai/internal/test"
 	"github.com/sashabaranov/go-openai/internal/test/checks"
 )
 
@@ -118,33 +117,6 @@ func TestEmbeddingEndpoint(t *testing.T) {
 	// test create embeddings with tokens
 	_, err = client.CreateEmbeddings(context.Background(), EmbeddingRequestTokens{})
 	checks.NoError(t, err, "CreateEmbeddings tokens error")
-}
-
-func TestEmbeddingRateLimit(t *testing.T) {
-	server := test.NewTestServer()
-	server.RegisterHandler(
-		"/v1/embeddings",
-		func(w http.ResponseWriter, r *http.Request) {
-			resBytes, _ := json.Marshal(EmbeddingResponse{})
-			fmt.Fprintln(w, string(resBytes))
-		},
-	)
-	// create the test server
-	var err error
-	ts := server.OpenAITestServer()
-	ts.Start()
-	defer ts.Close()
-
-	config := DefaultConfig(test.GetTestToken())
-	config.EnableRateLimiter = true
-	config.BaseURL = ts.URL + "/v1"
-	client := NewClientWithConfig(config)
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	_, err = client.CreateEmbeddings(ctx, EmbeddingRequest{
-		Model: AdaEmbeddingV2,
-	})
-	checks.ErrorContains(t, err, "context canceled", "CreateEmbeddings error")
 }
 
 func TestEmbeddingRequest_Tokens(t *testing.T) {

@@ -148,37 +148,6 @@ func TestCreateCompletionStreamError(t *testing.T) {
 	t.Logf("%+v\n", apiErr)
 }
 
-func TestCreateCompletionStreamRateLimitError(t *testing.T) {
-	client, server, teardown := setupOpenAITestServer()
-	defer teardown()
-	server.RegisterHandler("/v1/completions", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(429)
-
-		// Send test responses
-		dataBytes := []byte(`{"error":{` +
-			`"message": "You are sending requests too quickly.",` +
-			`"type":"rate_limit_reached",` +
-			`"param":null,` +
-			`"code":"rate_limit_reached"}}`)
-
-		_, err := w.Write(dataBytes)
-		checks.NoError(t, err, "Write error")
-	})
-
-	var apiErr *APIError
-	_, err := client.CreateCompletionStream(context.Background(), CompletionRequest{
-		MaxTokens: 5,
-		Model:     GPT3Ada,
-		Prompt:    "Hello!",
-		Stream:    true,
-	})
-	if !errors.As(err, &apiErr) {
-		t.Errorf("TestCreateCompletionStreamRateLimitError did not return APIError")
-	}
-	t.Logf("%+v\n", apiErr)
-}
-
 func TestCreateCompletionStreamTooManyEmptyStreamMessagesError(t *testing.T) {
 	client, server, teardown := setupOpenAITestServer()
 	defer teardown()

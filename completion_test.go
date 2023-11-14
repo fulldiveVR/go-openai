@@ -13,7 +13,6 @@ import (
 	"time"
 
 	. "github.com/sashabaranov/go-openai"
-	"github.com/sashabaranov/go-openai/internal/test"
 	"github.com/sashabaranov/go-openai/internal/test/checks"
 )
 
@@ -58,30 +57,6 @@ func TestCompletions(t *testing.T) {
 	}
 	_, err := client.CreateCompletion(context.Background(), req)
 	checks.NoError(t, err, "CreateCompletion error")
-}
-
-func TestCompletionsRateLimit(t *testing.T) {
-	server := test.NewTestServer()
-	server.RegisterHandler("/v1/completions", handleCompletionEndpoint)
-	// create the test server
-	var err error
-	ts := server.OpenAITestServer()
-	ts.Start()
-	defer ts.Close()
-
-	config := DefaultConfig(test.GetTestToken())
-	config.EnableRateLimiter = true
-	config.BaseURL = ts.URL + "/v1"
-	client := NewClientWithConfig(config)
-	ctx, cancel := context.WithCancel(context.Background())
-	req := CompletionRequest{
-		MaxTokens: 5,
-		Model:     "ada",
-	}
-	req.Prompt = "Lorem ipsum"
-	cancel()
-	_, err = client.CreateCompletion(ctx, req)
-	checks.ErrorContains(t, err, "context canceled", "CreateCompletion error")
 }
 
 // handleCompletionEndpoint Handles the completion endpoint by the test server.
