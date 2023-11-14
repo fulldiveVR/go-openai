@@ -140,13 +140,13 @@ func TestCompletionRequest_Tokens(t *testing.T) {
 		},
 		{
 			name:       "test1",
-			model:      GPT3Dot5Turbo,
+			model:      openai.GPT3Dot5Turbo,
 			prompt:     "Hello, world!",
 			wantTokens: 4,
 		},
 		{
 			name:       "test any prompt",
-			model:      GPT3Dot5Turbo,
+			model:      openai.GPT3Dot5Turbo,
 			prompt:     1,
 			wantTokens: 0,
 		},
@@ -154,7 +154,7 @@ func TestCompletionRequest_Tokens(t *testing.T) {
 
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(tt *testing.T) {
-			req := CompletionRequest{
+			req := openai.CompletionRequest{
 				Model:  testcase.model,
 				Prompt: testcase.prompt,
 			}

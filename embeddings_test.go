@@ -135,7 +135,7 @@ func TestEmbeddingEndpoint(t *testing.T) {
 		},
 	)
 	// test create embeddings with strings (simple embedding request)
-	_, err := client.CreateEmbeddings(context.Background(), EmbeddingRequest{Model: EmbeddingModel(1)})
+	_, err := client.CreateEmbeddings(context.Background(), openai.EmbeddingRequest{Model: openai.EmbeddingModel(1)})
 	res, err := client.CreateEmbeddings(context.Background(), openai.EmbeddingRequest{})
 	checks.NoError(t, err, "CreateEmbeddings error")
 	if !reflect.DeepEqual(res.Data, sampleEmbeddings) {
@@ -277,7 +277,7 @@ func TestDotProduct(t *testing.T) {
 func TestEmbeddingRequest_Tokens(t *testing.T) {
 	testcases := []struct {
 		name       string
-		model      EmbeddingModel
+		model      openai.EmbeddingModel
 		input      []string
 		wantErr    error
 		wantTokens int
@@ -288,7 +288,7 @@ func TestEmbeddingRequest_Tokens(t *testing.T) {
 		},
 		{
 			name:  "test1",
-			model: AdaEmbeddingV2,
+			model: openai.AdaEmbeddingV2,
 			input: []string{
 				"The food was delicious and the waiter",
 			},
@@ -298,7 +298,7 @@ func TestEmbeddingRequest_Tokens(t *testing.T) {
 
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(tt *testing.T) {
-			req := EmbeddingRequest{
+			req := openai.EmbeddingRequest{
 				Model: testcase.model,
 				Input: testcase.input,
 			}

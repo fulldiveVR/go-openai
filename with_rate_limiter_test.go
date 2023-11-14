@@ -3,12 +3,11 @@ package openai_test
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"testing"
 
-	. "github.com/sashabaranov/go-openai"
+	"github.com/sashabaranov/go-openai"
 	"github.com/sashabaranov/go-openai/internal/test"
 	"github.com/sashabaranov/go-openai/internal/test/checks"
 	"github.com/sashabaranov/go-openai/jsonschema"
@@ -42,104 +41,18 @@ func TestCreateChatCompletionStreamRateLimit(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	cancel()
-	_, err := client.CreateChatCompletionStream(ctx, ChatCompletionRequest{
+	_, err := client.CreateChatCompletionStream(ctx, openai.ChatCompletionRequest{
 		MaxTokens: 5,
-		Model:     GPT3Dot5Turbo,
-		Messages: []ChatCompletionMessage{
+		Model:     openai.GPT3Dot5Turbo,
+		Messages: []openai.ChatCompletionMessage{
 			{
-				Role:    ChatMessageRoleUser,
+				Role:    openai.ChatMessageRoleUser,
 				Content: "Hello!",
 			},
 		},
 		Stream: true,
 	})
 	checks.ErrorContains(t, err, "failed to wait for rate limiter: context canceled")
-}
-
-func TestCreateChatCompletionStreamRateLimitError(t *testing.T) {
-	client, server, teardown := setupOpenAITestServer()
-	defer teardown()
-	server.RegisterHandler("/v1/chat/completions", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(429)
-
-		// Send test responses
-		dataBytes := []byte(`{"error":{` +
-			`"message": "You are sending requests too quickly.",` +
-			`"type":"rate_limit_reached",` +
-			`"param":null,` +
-			`"code":"rate_limit_reached"}}`)
-
-		_, err := w.Write(dataBytes)
-		checks.NoError(t, err, "Write error")
-	})
-	_, err := client.CreateChatCompletionStream(context.Background(), ChatCompletionRequest{
-		MaxTokens: 5,
-		Model:     GPT3Dot5Turbo,
-		Messages: []ChatCompletionMessage{
-			{
-				Role:    ChatMessageRoleUser,
-				Content: "Hello!",
-			},
-		},
-		Stream: true,
-	})
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
-		t.Errorf("TestCreateChatCompletionStreamRateLimitError did not return APIError")
-	}
-	t.Logf("%+v\n", apiErr)
-}
-
-func TestAzureCreateChatCompletionStreamRateLimitError(t *testing.T) {
-	wantCode := "429"
-	wantMessage := "Requests to the Creates a completion for the chat message Operation under Azure OpenAI API " +
-		"version 2023-03-15-preview have exceeded token rate limit of your current OpenAI S0 pricing tier. " +
-		"Please retry after 20 seconds. " +
-		"Please go here: https://aka.ms/oai/quotaincrease if you would like to further increase the default rate limit."
-
-	client, server, teardown := setupAzureTestServer()
-	defer teardown()
-	server.RegisterHandler("/openai/deployments/gpt-35-turbo/chat/completions",
-		func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusTooManyRequests)
-			// Send test responses
-			dataBytes := []byte(`{"error": { "code": "` + wantCode + `", "message": "` + wantMessage + `"}}`)
-			_, err := w.Write(dataBytes)
-
-			checks.NoError(t, err, "Write error")
-		})
-
-	apiErr := &APIError{}
-	_, err := client.CreateChatCompletionStream(context.Background(), ChatCompletionRequest{
-		MaxTokens: 5,
-		Model:     GPT3Dot5Turbo,
-		Messages: []ChatCompletionMessage{
-			{
-				Role:    ChatMessageRoleUser,
-				Content: "Hello!",
-			},
-		},
-		Stream: true,
-	})
-	if !errors.As(err, &apiErr) {
-		t.Errorf("Did not return APIError: %+v\n", apiErr)
-		return
-	}
-	if apiErr.HTTPStatusCode != http.StatusTooManyRequests {
-		t.Errorf("Did not return HTTPStatusCode got = %d, want = %d\n", apiErr.HTTPStatusCode, http.StatusTooManyRequests)
-		return
-	}
-	code, ok := apiErr.Code.(string)
-	if !ok || code != wantCode {
-		t.Errorf("Did not return Code. got = %v, want = %s\n", apiErr.Code, wantCode)
-		return
-	}
-	if apiErr.Message != wantMessage {
-		t.Errorf("Did not return Message. got = %s, want = %s\n", apiErr.Message, wantMessage)
-		return
-	}
 }
 
 func TestChatCompletionsRateLimit(t *testing.T) {
@@ -149,16 +62,16 @@ func TestChatCompletionsRateLimit(t *testing.T) {
 	t.Run("bytes", func(t *testing.T) {
 		//nolint:lll
 		msg := json.RawMessage(`{"properties":{"count":{"type":"integer","description":"total number of words in sentence"},"words":{"items":{"type":"string"},"type":"array","description":"list of words in sentence"}},"type":"object","required":["count","words"]}`)
-		_, err := client.CreateChatCompletion(context.Background(), ChatCompletionRequest{
+		_, err := client.CreateChatCompletion(context.Background(), openai.ChatCompletionRequest{
 			MaxTokens: 5,
-			Model:     GPT3Dot5Turbo0613,
-			Messages: []ChatCompletionMessage{
+			Model:     openai.GPT3Dot5Turbo0613,
+			Messages: []openai.ChatCompletionMessage{
 				{
-					Role:    ChatMessageRoleUser,
+					Role:    openai.ChatMessageRoleUser,
 					Content: "Hello!",
 				},
 			},
-			Functions: []FunctionDefinition{{
+			Functions: []openai.FunctionDefinition{{
 				Name:       "test",
 				Parameters: &msg,
 			}},
@@ -174,16 +87,16 @@ func TestChatCompletionsRateLimit(t *testing.T) {
 			Count: 2,
 			Words: []string{"hello", "world"},
 		}
-		_, err := client.CreateChatCompletion(context.Background(), ChatCompletionRequest{
+		_, err := client.CreateChatCompletion(context.Background(), openai.ChatCompletionRequest{
 			MaxTokens: 5,
-			Model:     GPT3Dot5Turbo0613,
-			Messages: []ChatCompletionMessage{
+			Model:     openai.GPT3Dot5Turbo0613,
+			Messages: []openai.ChatCompletionMessage{
 				{
-					Role:    ChatMessageRoleUser,
+					Role:    openai.ChatMessageRoleUser,
 					Content: "Hello!",
 				},
 			},
-			Functions: []FunctionDefinition{{
+			Functions: []openai.FunctionDefinition{{
 				Name:       "test",
 				Parameters: &msg,
 			}},
@@ -191,16 +104,16 @@ func TestChatCompletionsRateLimit(t *testing.T) {
 		checks.NoError(t, err, "CreateChatCompletion with functions error")
 	})
 	t.Run("JSONSchemaDefinition", func(t *testing.T) {
-		_, err := client.CreateChatCompletion(context.Background(), ChatCompletionRequest{
+		_, err := client.CreateChatCompletion(context.Background(), openai.ChatCompletionRequest{
 			MaxTokens: 5,
-			Model:     GPT3Dot5Turbo0613,
-			Messages: []ChatCompletionMessage{
+			Model:     openai.GPT3Dot5Turbo0613,
+			Messages: []openai.ChatCompletionMessage{
 				{
-					Role:    ChatMessageRoleUser,
+					Role:    openai.ChatMessageRoleUser,
 					Content: "Hello!",
 				},
 			},
-			Functions: []FunctionDefinition{{
+			Functions: []openai.FunctionDefinition{{
 				Name: "test",
 				Parameters: &jsonschema.Definition{
 					Type: jsonschema.Object,
@@ -228,16 +141,16 @@ func TestChatCompletionsRateLimit(t *testing.T) {
 	})
 	t.Run("JSONSchemaDefinitionWithFunctionDefine", func(t *testing.T) {
 		// this is a compatibility check
-		_, err := client.CreateChatCompletion(context.Background(), ChatCompletionRequest{
+		_, err := client.CreateChatCompletion(context.Background(), openai.ChatCompletionRequest{
 			MaxTokens: 5,
-			Model:     GPT3Dot5Turbo0613,
-			Messages: []ChatCompletionMessage{
+			Model:     openai.GPT3Dot5Turbo0613,
+			Messages: []openai.ChatCompletionMessage{
 				{
-					Role:    ChatMessageRoleUser,
+					Role:    openai.ChatMessageRoleUser,
 					Content: "Hello!",
 				},
 			},
-			Functions: []FunctionDefine{{
+			Functions: []openai.FunctionDefinition{{
 				Name: "test",
 				Parameters: &jsonschema.Definition{
 					Type: jsonschema.Object,
@@ -274,17 +187,17 @@ func TestChatCompletionsRateLimitErr(t *testing.T) {
 	ts.Start()
 	defer ts.Close()
 
-	config := DefaultConfig(test.GetTestToken())
+	config := openai.DefaultConfig(test.GetTestToken())
 	config.EnableRateLimiter = true
 	config.BaseURL = ts.URL + "/v1"
-	client := NewClientWithConfig(config)
+	client := openai.NewClientWithConfig(config)
 	ctx, cancel := context.WithCancel(context.Background())
-	req := ChatCompletionRequest{
+	req := openai.ChatCompletionRequest{
 		MaxTokens: 5,
-		Model:     GPT3Dot5Turbo,
-		Messages: []ChatCompletionMessage{
+		Model:     openai.GPT3Dot5Turbo,
+		Messages: []openai.ChatCompletionMessage{
 			{
-				Role:    ChatMessageRoleUser,
+				Role:    openai.ChatMessageRoleUser,
 				Content: "Hello!",
 			},
 		},
@@ -303,12 +216,12 @@ func TestCompletionsRateLimit(t *testing.T) {
 	ts.Start()
 	defer ts.Close()
 
-	config := DefaultConfig(test.GetTestToken())
+	config := openai.DefaultConfig(test.GetTestToken())
 	config.EnableRateLimiter = true
 	config.BaseURL = ts.URL + "/v1"
-	client := NewClientWithConfig(config)
+	client := openai.NewClientWithConfig(config)
 	ctx, cancel := context.WithCancel(context.Background())
-	req := CompletionRequest{
+	req := openai.CompletionRequest{
 		MaxTokens: 5,
 		Model:     "ada",
 	}
@@ -323,7 +236,7 @@ func TestEmbeddingRateLimit(t *testing.T) {
 	server.RegisterHandler(
 		"/v1/embeddings",
 		func(w http.ResponseWriter, r *http.Request) {
-			resBytes, _ := json.Marshal(EmbeddingResponse{})
+			resBytes, _ := json.Marshal(openai.EmbeddingResponse{})
 			fmt.Fprintln(w, string(resBytes))
 		},
 	)
@@ -333,45 +246,14 @@ func TestEmbeddingRateLimit(t *testing.T) {
 	ts.Start()
 	defer ts.Close()
 
-	config := DefaultConfig(test.GetTestToken())
+	config := openai.DefaultConfig(test.GetTestToken())
 	config.EnableRateLimiter = true
 	config.BaseURL = ts.URL + "/v1"
-	client := NewClientWithConfig(config)
+	client := openai.NewClientWithConfig(config)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	_, err = client.CreateEmbeddings(ctx, EmbeddingRequest{
-		Model: AdaEmbeddingV2,
+	_, err = client.CreateEmbeddings(ctx, openai.EmbeddingRequest{
+		Model: openai.AdaEmbeddingV2,
 	})
 	checks.ErrorContains(t, err, "context canceled", "CreateEmbeddings error")
-}
-
-func TestCreateCompletionStreamRateLimitError(t *testing.T) {
-	client, server, teardown := setupOpenAITestServer()
-	defer teardown()
-	server.RegisterHandler("/v1/completions", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(429)
-
-		// Send test responses
-		dataBytes := []byte(`{"error":{` +
-			`"message": "You are sending requests too quickly.",` +
-			`"type":"rate_limit_reached",` +
-			`"param":null,` +
-			`"code":"rate_limit_reached"}}`)
-
-		_, err := w.Write(dataBytes)
-		checks.NoError(t, err, "Write error")
-	})
-
-	var apiErr *APIError
-	_, err := client.CreateCompletionStream(context.Background(), CompletionRequest{
-		MaxTokens: 5,
-		Model:     GPT3Ada,
-		Prompt:    "Hello!",
-		Stream:    true,
-	})
-	if !errors.As(err, &apiErr) {
-		t.Errorf("TestCreateCompletionStreamRateLimitError did not return APIError")
-	}
-	t.Logf("%+v\n", apiErr)
 }

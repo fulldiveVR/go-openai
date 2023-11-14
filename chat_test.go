@@ -399,7 +399,7 @@ func TestChatCompletionRequest_Tokens(t *testing.T) {
 	testcases := []struct {
 		name       string
 		model      string
-		messages   []ChatCompletionMessage
+		messages   []openai.ChatCompletionMessage
 		wantErr    error
 		wantTokens int
 	}{
@@ -410,15 +410,15 @@ func TestChatCompletionRequest_Tokens(t *testing.T) {
 		},
 		{
 			name:       "test1",
-			model:      GPT3Dot5Turbo,
-			messages:   []ChatCompletionMessage{{Content: "Hello!"}},
+			model:      openai.GPT3Dot5Turbo,
+			messages:   []openai.ChatCompletionMessage{{Content: "Hello!"}},
 			wantTokens: 2,
 		},
 	}
 
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(tt *testing.T) {
-			req := ChatCompletionRequest{
+			req := openai.ChatCompletionRequest{
 				Model:    testcase.model,
 				Messages: testcase.messages,
 			}

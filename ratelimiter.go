@@ -32,6 +32,7 @@ const (
 	OpenAIAudioRequestLimitPerMinute            = 50
 	OpenAIGPT3Dot5Turbo16kRequestLimitPerMinute = 2000
 	OpenAIDefaultRequestLimitPerMinute          = 3500
+	OpenAIGPT4TurboRequestLimitPerMinute        = 500
 
 	OpenAIDavinciTokensLimitPerMinute          = 350000
 	OpenAIAdaTokensLimitPerMinute              = 350000 * 200
@@ -40,6 +41,7 @@ const (
 	OpenAIGPT4TokensLimitPerMinute             = 10000
 	OpenAIGPT432kTokensLimitPerMinute          = 150000
 	OpenAIDefaultTokensLimitPerMinute          = 350000
+	OpenAIGPT4TurboTokensLimitPerMinute        = 150000
 )
 
 type TokenCountable interface {
@@ -218,6 +220,7 @@ func (r *MemRateLimiter) newOpenAIRequestLimiters() map[string]*rate.Limiter {
 		GPT40314:             r.newLimiter(OpenAIGPT4RequestLimitPerMinute),
 		GPT432K:              r.newLimiter(OpenAIGPT432kRequestLimitPerMinute),
 		GPT432K0314:          r.newLimiter(OpenAIGPT432kRequestLimitPerMinute),
+		GPT4TurboPreview:     r.newLimiter(OpenAIGPT4TurboRequestLimitPerMinute),
 	}
 }
 
@@ -234,5 +237,6 @@ func (r *MemRateLimiter) newOpenAITokensLimiters() map[string]*rate.Limiter {
 		GPT3Dot5Turbo16K0613:   r.newLimiter(OpenAIGPT3Dot5Turbo16kTokensLimitPerMinute),
 		GPT4:                   r.newLimiter(OpenAIGPT4TokensLimitPerMinute),
 		GPT432K:                r.newLimiter(OpenAIGPT432kTokensLimitPerMinute),
+		GPT4TurboPreview:       r.newLimiter(OpenAIGPT4TurboTokensLimitPerMinute),
 	}
 }
