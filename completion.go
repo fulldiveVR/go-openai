@@ -44,8 +44,8 @@ const (
 	// Deprecated: Will be shut down on January 04, 2024. Use gpt-3.5-turbo-instruct instead.
 	GPT3TextAda001 = "text-ada-001"
 	// Deprecated: Will be shut down on January 04, 2024. Use gpt-3.5-turbo-instruct instead.
-	GPT3TextAdaEmbeddingV2  = "text-embedding-ada-002"
-	GPT3TextDavinci001 = "text-davinci-001"
+	GPT3TextAdaEmbeddingV2 = "text-embedding-ada-002"
+	GPT3TextDavinci001     = "text-davinci-001"
 	// Deprecated: Will be shut down on January 04, 2024. Use gpt-3.5-turbo-instruct instead.
 	GPT3DavinciInstructBeta = "davinci-instruct-beta"
 	GPT3Davinci             = "davinci"
@@ -58,6 +58,7 @@ const (
 	GPT3Ada002            = "ada-002"
 	GPT3Babbage           = "babbage"
 	GPT3Babbage002        = "babbage-002"
+	GPT3Whisper1          = "whisper-1"
 )
 
 // Codex Defines the models provided by OpenAI.

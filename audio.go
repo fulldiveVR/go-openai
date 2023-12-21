@@ -116,6 +116,13 @@ func (c *Client) callAudioAPI(
 		return AudioResponse{}, err
 	}
 
+	if c.config.EnableRateLimiter {
+		err = c.rateLimiter.WaitForRequest(ctx, request.Model, request)
+		if err != nil {
+			return
+		}
+	}
+
 	if request.HasJSONResponse() {
 		err = c.sendRequest(req, &response)
 	} else {
@@ -127,6 +134,10 @@ func (c *Client) callAudioAPI(
 		return AudioResponse{}, err
 	}
 	return
+}
+
+func (r AudioRequest) Tokens() (int, error) {
+	return 0, nil
 }
 
 // HasJSONResponse returns true if the response format is JSON.

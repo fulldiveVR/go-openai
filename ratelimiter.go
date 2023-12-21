@@ -221,6 +221,7 @@ func (r *MemRateLimiter) newOpenAIRequestLimiters() map[string]*rate.Limiter {
 		GPT432K:              r.newLimiter(OpenAIGPT432kRequestLimitPerMinute),
 		GPT432K0314:          r.newLimiter(OpenAIGPT432kRequestLimitPerMinute),
 		GPT4TurboPreview:     r.newLimiter(OpenAIGPT4TurboRequestLimitPerMinute),
+		GPT3Whisper1:         r.newLimiter(OpenAIAudioRequestLimitPerMinute),
 	}
 }
 
