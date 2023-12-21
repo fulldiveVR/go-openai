@@ -25,23 +25,23 @@ const (
 	AzureGPT432kTokensLimitPerMinute = 32000
 	AzureDefaultTokensLimitPerMinute = 120000
 
-	OpenAITextAndEmbeddingRequestLimitPerMinute = 3500
-	OpenAIChatRequestLimitPerMinute             = 3500
-	OpenAIGPT4RequestLimitPerMinute             = 200
+	OpenAITextAndEmbeddingRequestLimitPerMinute = 10000
+	OpenAIChatRequestLimitPerMinute             = 10000
+	OpenAIGPT4RequestLimitPerMinute             = 10000
 	OpenAIGPT432kRequestLimitPerMinute          = 20
-	OpenAIAudioRequestLimitPerMinute            = 50
+	OpenAIAudioRequestLimitPerMinute            = 500
 	OpenAIGPT3Dot5Turbo16kRequestLimitPerMinute = 2000
 	OpenAIDefaultRequestLimitPerMinute          = 3500
-	OpenAIGPT4TurboRequestLimitPerMinute        = 500
+	OpenAIGPT4TurboRequestLimitPerMinute        = 10000
 
 	OpenAIDavinciTokensLimitPerMinute          = 350000
-	OpenAIAdaTokensLimitPerMinute              = 350000 * 200
-	OpenAIChatTokensLimitPerMinute             = 90000
+	OpenAIAdaTokensLimitPerMinute              = 10000000
+	OpenAIChatTokensLimitPerMinute             = 2000000
 	OpenAIGPT3Dot5Turbo16kTokensLimitPerMinute = 180_000
-	OpenAIGPT4TokensLimitPerMinute             = 10000
+	OpenAIGPT4TokensLimitPerMinute             = 300000
 	OpenAIGPT432kTokensLimitPerMinute          = 150000
 	OpenAIDefaultTokensLimitPerMinute          = 350000
-	OpenAIGPT4TurboTokensLimitPerMinute        = 150000
+	OpenAIGPT4TurboTokensLimitPerMinute        = 600000
 )
 
 type TokenCountable interface {
