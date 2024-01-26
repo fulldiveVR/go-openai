@@ -135,7 +135,7 @@ func TestEmbeddingEndpoint(t *testing.T) {
 		},
 	)
 	// test create embeddings with strings (simple embedding request)
-	_, err := client.CreateEmbeddings(context.Background(), openai.EmbeddingRequest{Model: openai.EmbeddingModel(1)})
+	_, err := client.CreateEmbeddings(context.Background(), openai.EmbeddingRequest{Model: openai.AdaEmbeddingV2})
 	res, err := client.CreateEmbeddings(context.Background(), openai.EmbeddingRequest{})
 	checks.NoError(t, err, "CreateEmbeddings error")
 	if !reflect.DeepEqual(res.Data, sampleEmbeddings) {

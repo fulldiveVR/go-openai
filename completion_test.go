@@ -132,12 +132,13 @@ func TestCompletionRequest_Tokens(t *testing.T) {
 		wantErr    error
 		wantTokens int
 	}{
-		{
-			name:    "test unknown model",
-			model:   "unknown",
-			prompt:  "Hello, world!",
-			wantErr: errors.New("failed to tokenize prompt: model not supported: model not supported"),
-		},
+		// change behaviour to fallback to default model ADA2
+		//{
+		//	name:    "test unknown model",
+		//	model:   "unknown",
+		//	prompt:  "Hello, world!",
+		//	wantErr: errors.New("failed to tokenize prompt: model not supported: model not supported"),
+		//},
 		{
 			name:       "test1",
 			model:      openai.GPT3Dot5Turbo,

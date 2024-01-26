@@ -185,9 +185,13 @@ type EmbeddingRequestStrings struct {
 }
 
 func (r EmbeddingRequest) Tokens() (tokens int, err error) {
-	var text string
-	for _, paragraph := range r.Input.([]string) {
-		text += paragraph
+	var text = ""
+	if r.Input != nil {
+		if paragraphs, ok := r.Input.([]string); ok {
+			for _, paragraph := range paragraphs {
+				text += paragraph
+			}
+		}
 	}
 
 	ids, _, err := Tokenize(r.Model.String(), text)
@@ -275,7 +279,11 @@ func (c *Client) CreateEmbeddings(
 
 // String implements the fmt.Stringer interface.
 func (e EmbeddingModel) String() string {
-	return enumToString[e]
+	res := enumToString[e]
+	if res == "" {
+		return enumToString[AdaEmbeddingV2]
+	}
+	return res
 }
 
 var enumToString = map[EmbeddingModel]string{
