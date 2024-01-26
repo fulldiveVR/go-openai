@@ -5,8 +5,8 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
-	"math"
 	"fmt"
+	"math"
 	"net/http"
 )
 
@@ -271,4 +271,29 @@ func (c *Client) CreateEmbeddings(
 
 	res, err = base64Response.ToEmbeddingResponse()
 	return
+}
+
+// String implements the fmt.Stringer interface.
+func (e EmbeddingModel) String() string {
+	return enumToString[e]
+}
+
+var enumToString = map[EmbeddingModel]string{
+	AdaSimilarity:         "text-similarity-ada-001",
+	BabbageSimilarity:     "text-similarity-babbage-001",
+	CurieSimilarity:       "text-similarity-curie-001",
+	DavinciSimilarity:     "text-similarity-davinci-001",
+	AdaSearchDocument:     "text-search-ada-doc-001",
+	AdaSearchQuery:        "text-search-ada-query-001",
+	BabbageSearchDocument: "text-search-babbage-doc-001",
+	BabbageSearchQuery:    "text-search-babbage-query-001",
+	CurieSearchDocument:   "text-search-curie-doc-001",
+	CurieSearchQuery:      "text-search-curie-query-001",
+	DavinciSearchDocument: "text-search-davinci-doc-001",
+	DavinciSearchQuery:    "text-search-davinci-query-001",
+	AdaCodeSearchCode:     "code-search-ada-code-001",
+	AdaCodeSearchText:     "code-search-ada-text-001",
+	BabbageCodeSearchCode: "code-search-babbage-code-001",
+	BabbageCodeSearchText: "code-search-babbage-text-001",
+	AdaEmbeddingV2:        "text-embedding-ada-002",
 }
