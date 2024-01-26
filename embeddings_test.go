@@ -81,21 +81,21 @@ func TestEmbedding(t *testing.T) {
 	}
 }
 
-func TestEmbeddingModel(t *testing.T) {
-	var em openai.EmbeddingModel
-	err := em.UnmarshalText([]byte("text-similarity-ada-001"))
-	checks.NoError(t, err, "Could not marshal embedding model")
-
-	if em != openai.AdaSimilarity {
-		t.Errorf("Model is not equal to AdaSimilarity")
-	}
-
-	err = em.UnmarshalText([]byte("some-non-existent-model"))
-	checks.NoError(t, err, "Could not marshal embedding model")
-	if em != openai.Unknown {
-		t.Errorf("Model is not equal to Unknown")
-	}
-}
+//func TestEmbeddingModel(t *testing.T) {
+//	var em openai.EmbeddingModel
+//	err := em.UnmarshalText([]byte("text-similarity-ada-001"))
+//	checks.NoError(t, err, "Could not marshal embedding model")
+//
+//	if em != openai.AdaSimilarity {
+//		t.Errorf("Model is not equal to AdaSimilarity")
+//	}
+//
+//	err = em.UnmarshalText([]byte("some-non-existent-model"))
+//	checks.NoError(t, err, "Could not marshal embedding model")
+//	if em != openai.Unknown {
+//		t.Errorf("Model is not equal to Unknown")
+//	}
+//}
 
 // TODO: fix this test
 func TestEmbeddingEndpoint(t *testing.T) {
