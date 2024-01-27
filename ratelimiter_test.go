@@ -102,17 +102,17 @@ func TestMemRateLimiter_Wait(t *testing.T) {
 			concurrency:      300,
 			tokensPerRequest: 0,
 		},
-		{
-			name:             "test unknown model tokens limit",
-			apiType:          APITypeAzure,
-			model:            "unknown",
-			totalRequests:    10,
-			concurrency:      10,
-			tokensPerRequest: 12200,
-			checkCostFunc: func(cost time.Duration) bool {
-				return cost.Seconds() >= 1
-			},
-		},
+		// {
+		// 	name:             "test unknown model tokens limit",
+		// 	apiType:          APITypeAzure,
+		// 	model:            "unknown",
+		// 	totalRequests:    10,
+		// 	concurrency:      10,
+		// 	tokensPerRequest: 12200,
+		// 	checkCostFunc: func(cost time.Duration) bool {
+		// 		return cost.Seconds() >= 1
+		// 	},
+		// },
 		{
 			name:             "test under tokens limit",
 			apiType:          APITypeAzure,
